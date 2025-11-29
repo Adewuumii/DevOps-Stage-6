@@ -141,6 +141,5 @@ resource "null_resource" "run_ansible" {
   triggers = {
     instance_id        = aws_instance.todo_app_server.id
     inventory_content  = local_file.ansible_inventory.content
-    playbook_timestamp = timestamp()
   }
 }
