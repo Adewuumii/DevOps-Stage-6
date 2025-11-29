@@ -17,7 +17,7 @@
         msg: "Application deployed successfully at https://{{ domain_name }}"
     
     - name: Verify services are running
-      shell: docker ps --format "table {{.Names}}\t{{.Status}}"
+      shell: docker ps 
       register: docker_status
       changed_when: false
       

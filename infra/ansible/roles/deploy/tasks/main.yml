@@ -42,6 +42,23 @@
     mode: '0755'
   become: no
 
+- name: Create acme.json file with correct permissions
+  file:
+    path: "{{ app_directory }}/letsencrypt/acme.json"
+    state: touch
+    owner: ubuntu
+    group: ubuntu
+    mode: '0600'  
+  become: no
+
+- name: Ensure acme.json has correct permissions (if exists)
+  file:
+    path: "{{ app_directory }}/letsencrypt/acme.json"
+    owner: ubuntu
+    group: ubuntu
+    mode: '0600'
+  become: no
+
 - name: Deploy Traefik configuration
   template:
     src: traefik.yml.j2
@@ -103,7 +120,7 @@
   changed_when: false
 
 - name: Get running containers
-  shell: docker ps --format "{{.Names}}: {{.Status}}"
+  shell: docker ps
   become: no
   register: running_containers
   changed_when: false
