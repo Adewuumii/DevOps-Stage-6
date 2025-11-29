@@ -1,0 +1,8 @@
+aws_region           = "eu-west-1"  
+instance_type        = "t2.medium"
+key_name             = "europe"  
+domain_name          = "mytodos.mooo.com"
+ssh_private_key_path = "/home/adewumi/europe.pem"  
+email_for_alerts     = "adewumi0110@gmail.com"
+github_repo_url      = "https://github.com/Adewuumii/DevOps-Stage-6"
+allowed_ssh_cidr     = "0.0.0.0/0"  

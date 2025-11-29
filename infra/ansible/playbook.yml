@@ -1,0 +1,26 @@
+---
+- name: Deploy TODO Microservices Application
+  hosts: todo_servers
+  become: yes
+  gather_facts: yes
+
+  vars:
+    docker_compose_version: "v2.24.5"
+    
+  roles:
+    - dependencies
+    - deploy
+
+  post_tasks:
+    - name: Display application URL
+      debug:
+        msg: "Application deployed successfully at https://{{ domain_name }}"
+    
+    - name: Verify services are running
+      shell: docker ps --format "table {{.Names}}\t{{.Status}}"
+      register: docker_status
+      changed_when: false
+      
+    - name: Show running containers
+      debug:
+        var: docker_status.stdout_lines
