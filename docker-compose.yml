@@ -1,11 +1,11 @@
 networks:
   web:
-    external: false
+    external: true
 
 services:
   # Traefik Reverse Proxy
   traefik:
-    image: traefik:v2.10
+    image: traefik:latest
     container_name: traefik
     restart: unless-stopped
     security_opt:
@@ -21,7 +21,6 @@ services:
       - ./letsencrypt:/letsencrypt
     labels:
       - "traefik.enable=true"
-      # Dashboard
       - "traefik.http.routers.dashboard.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
       - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
@@ -48,13 +47,28 @@ services:
     restart: unless-stopped
     networks:
       - web
+    expose:
+      - "8080"  
+    environment:
+      - AUTH_API_PORT=8080
+      - USERS_API_ADDRESS=http://users-api:8080
+    depends_on:
+      - users-api
     labels:
       - "traefik.enable=true"
+      
+      # Route for /login (what frontend expects)
+      - "traefik.http.routers.auth-login.rule=Host(`${DOMAIN}`) && Path(`/login`)"
+      - "traefik.http.routers.auth-login.entrypoints=websecure"
+      - "traefik.http.routers.auth-login.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.auth-login.service=auth"
+      - "traefik.http.routers.auth-login.priority=100"
+      
+      # Original /api/auth route
       - "traefik.http.routers.auth.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/auth`)"
       - "traefik.http.routers.auth.entrypoints=websecure"
       - "traefik.http.routers.auth.tls.certresolver=letsencrypt"
       - "traefik.http.services.auth.loadbalancer.server.port=8080"
-      # Strip /api/auth prefix before forwarding
       - "traefik.http.middlewares.auth-strip.stripprefix.prefixes=/api/auth"
       - "traefik.http.routers.auth.middlewares=auth-strip"
 
@@ -65,12 +79,29 @@ services:
     restart: unless-stopped
     networks:
       - web
+    expose:
+      - "8082"
+    environment:
+      - TODO_API_PORT=8082
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
     labels:
       - "traefik.enable=true"
+      
+      # Route for /todos (what frontend expects)
+      - "traefik.http.routers.todos-direct.rule=Host(`${DOMAIN}`) && PathPrefix(`/todos`)"
+      - "traefik.http.routers.todos-direct.entrypoints=websecure"
+      - "traefik.http.routers.todos-direct.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.todos-direct.service=todos"
+      - "traefik.http.routers.todos-direct.priority=100"
+      
+      # Original /api/todos route
       - "traefik.http.routers.todos.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/todos`)"
       - "traefik.http.routers.todos.entrypoints=websecure"
       - "traefik.http.routers.todos.tls.certresolver=letsencrypt"
-      - "traefik.http.services.todos.loadbalancer.server.port=3000"
+      - "traefik.http.services.todos.loadbalancer.server.port=8082"
       - "traefik.http.middlewares.todos-strip.stripprefix.prefixes=/api/todos"
       - "traefik.http.routers.todos.middlewares=todos-strip"
 
@@ -81,6 +112,10 @@ services:
     restart: unless-stopped
     networks:
       - web
+    expose:
+      - "8080"  
+    environment:
+      - SERVER_PORT=8080
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.users.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/users`)"
@@ -105,5 +140,9 @@ services:
     restart: unless-stopped
     networks:
       - web
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_CHANNEL=log_channel
     depends_on:
       - redis
