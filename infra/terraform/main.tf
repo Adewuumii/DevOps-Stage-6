@@ -63,7 +63,7 @@ resource "aws_security_group" "todo_app_sg" {
     Name        = "todo-app-sg"
     Environment = "production"
     ManagedBy   = "Terraform"
-    TestDrift   = "true"
+  # TestDrift   = "true"
   }
 
   lifecycle {
@@ -94,6 +94,7 @@ resource "aws_instance" "todo_app_server" {
     Name        = "todo-app-server"
     Environment = "production"
     ManagedBy   = "Terraform"
+    TestDrift   = "true"
   }
 
   lifecycle {
