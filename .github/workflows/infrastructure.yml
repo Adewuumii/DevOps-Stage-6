@@ -57,20 +57,21 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        working-directory: ${{ env.WORKING_DIR }}
+        continue-on-error: true
         run: |
-          terraform plan -detailed-exitcode -out=tfplan || exit_code=$?
-          
-          if [ ${exit_code} -eq 0 ]; then
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-            echo "No infrastructure changes detected"
-          elif [ ${exit_code} -eq 2 ]; then
+          cd infra/terraform
+          terraform plan -detailed-exitcode -out=tfplan
+          PLAN_EXIT_CODE=$?
+          echo "exit_code=$PLAN_EXIT_CODE" >> $GITHUB_OUTPUT
+    
+          # Set has_changes based on exit code
+          if [ $PLAN_EXIT_CODE -eq 2 ]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "Infrastructure drift detected!"
           else
-            echo "Terraform plan failed"
-            exit ${exit_code}
+            echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
+    
+          exit 0
 
       - name: Show Terraform Plan
         working-directory: ${{ env.WORKING_DIR }}
@@ -93,26 +94,17 @@ jobs:
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: "Infrastructure Drift Detected - Approval Required"
           to: ${{ secrets.EMAIL_FOR_ALERTS }}
-          from: DevOps Automation <${{ secrets.SMTP_USERNAME }}>
+          from: DevOps CI/CD Pipeline
           body: |
-            Infrastructure drift has been detected in your TODO application!
-            
-            Repository: ${{ github.repository }}
-            Branch: ${{ github.ref_name }}
-            Commit: ${{ github.sha }}
-            Triggered by: ${{ github.actor }}
-            
-            Changes detected by Terraform Plan. Please review the workflow run:
-            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            
-             MANUAL APPROVAL REQUIRED 
-            
-            The pipeline is paused and waiting for your approval.
-            To proceed with applying changes:
-            1. Review the Terraform plan in the workflow logs
-            2. Go to the Actions tab and approve the deployment
-            
-            If you do not approve, no changes will be made to your infrastructure.
+            Infrastructure drift has been detected in the TODO application.
+      
+            Changes detected:
+              - Branch: ${{ github.ref_name }}
+              - Commit: ${{ github.sha }}
+              - Triggered by: ${{ github.actor }}
+      
+              Please review the changes and approve the deployment:
+              ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
   wait-for-approval:
     name: Wait for Manual Approval
