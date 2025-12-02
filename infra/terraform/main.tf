@@ -94,7 +94,7 @@ resource "aws_instance" "todo_app_server" {
     Name        = "todo-app-server"
     Environment = "production"
     ManagedBy   = "Terraform"
-    TestDrift   = "true"
+    DriftTest2  = "hello" 
   }
 
   lifecycle {
