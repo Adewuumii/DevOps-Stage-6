@@ -62,21 +62,34 @@ jobs:
         run: |
           terraform plan -detailed-exitcode -out=tfplan
           PLAN_EXIT_CODE=$?
+          
+          echo "DEBUG: Exit code is: $PLAN_EXIT_CODE"
           echo "exit_code=$PLAN_EXIT_CODE" >> $GITHUB_OUTPUT
-    
+          
           # Set has_changes based on exit code
           if [ "$PLAN_EXIT_CODE" -eq 2 ]; then
+            echo "DEBUG: Setting has_changes=true"
             echo "has_changes=true" >> $GITHUB_OUTPUT
+          elif [ "$PLAN_EXIT_CODE" -eq 0 ]; then
+            echo "DEBUG: Setting has_changes=false"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
           else
+            echo "DEBUG: Unexpected exit code: $PLAN_EXIT_CODE"
             echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
-    
+          
+          echo "DEBUG: Finished setting outputs"
           exit 0
 
       - name: Show Terraform Plan
         working-directory: ${{ env.WORKING_DIR }}
         run: terraform show tfplan
 
+      - name: Debug Outputs
+        run: |
+          echo "Plan exit code: ${{ steps.plan.outputs.exit_code }}"
+          echo "Has changes: ${{ steps.plan.outputs.has_changes }}"
+          
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         with:
