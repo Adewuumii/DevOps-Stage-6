@@ -63,7 +63,7 @@ resource "aws_security_group" "todo_app_sg" {
     Name        = "todo-app-sg"
     Environment = "production"
     ManagedBy   = "Terraform"
-  # DriftTest   = "enabled"
+    TestDrift   = "true"
   }
 
   lifecycle {
