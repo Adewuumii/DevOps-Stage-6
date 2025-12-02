@@ -59,24 +59,17 @@ jobs:
         id: plan
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          set +e
-          terraform plan -detailed-exitcode -out=tfplan 2>&1 | tee plan_output.txt
-          PLAN_EXIT_CODE=$?
-          set -e
+          terraform plan -detailed-exitcode -out=tfplan 2>&1 | tee plan_output.txt || true
           
-          echo "DEBUG: Exit code is: $PLAN_EXIT_CODE"
-          echo "exit_code=$PLAN_EXIT_CODE" >> $GITHUB_OUTPUT
-          
-          # Check if plan contains changes by parsing the output
-          if grep -E "Plan: [1-9]+ to add|Plan: [0-9]+ to add, [1-9]+ to change|Plan: [0-9]+ to add, [0-9]+ to change, [1-9]+ to destroy" plan_output.txt; then
-            echo "DEBUG: Changes detected in plan output"
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-          else
-            echo "DEBUG: No changes detected in plan output"
+          # Check if there are ANY changes (add, change, or destroy with non-zero values)
+          if grep -q "Plan: 0 to add, 0 to change, 0 to destroy" plan_output.txt; then
+            echo "DEBUG: No changes detected"
             echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "DEBUG: Changes detected in plan"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
           fi
           
-          echo "DEBUG: Finished setting outputs"
           exit 0
 
       - name: Show Terraform Plan
