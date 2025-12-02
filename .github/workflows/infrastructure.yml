@@ -59,26 +59,24 @@ jobs:
         id: plan
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          set +e  # Don't exit on error
-          terraform plan -detailed-exitcode -out=tfplan
+          set +e
+          terraform plan -detailed-exitcode -out=tfplan 2>&1 | tee plan_output.txt
           PLAN_EXIT_CODE=$?
-          set -e  # Re-enable exit on error
+          set -e
           
           echo "DEBUG: Exit code is: $PLAN_EXIT_CODE"
           echo "exit_code=$PLAN_EXIT_CODE" >> $GITHUB_OUTPUT
           
-          # Exit code 2 = changes detected
-          if [ "$PLAN_EXIT_CODE" -eq 2 ]; then
-            echo "DEBUG: Setting has_changes=true"
+          # Check if plan contains changes by parsing the output
+          if grep -E "Plan: [1-9]+ to add|Plan: [0-9]+ to add, [1-9]+ to change|Plan: [0-9]+ to add, [0-9]+ to change, [1-9]+ to destroy" plan_output.txt; then
+            echo "DEBUG: Changes detected in plan output"
             echo "has_changes=true" >> $GITHUB_OUTPUT
           else
-            echo "DEBUG: Setting has_changes=false (exit code: $PLAN_EXIT_CODE)"
+            echo "DEBUG: No changes detected in plan output"
             echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
           
           echo "DEBUG: Finished setting outputs"
-          
-          # Return 0 so the step doesn't fail
           exit 0
 
       - name: Show Terraform Plan
