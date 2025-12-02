@@ -58,14 +58,14 @@ jobs:
       - name: Terraform Plan
         id: plan
         continue-on-error: true
+        working-directory: ${{ env.WORKING_DIR }}
         run: |
-          cd infra/terraform
           terraform plan -detailed-exitcode -out=tfplan
           PLAN_EXIT_CODE=$?
           echo "exit_code=$PLAN_EXIT_CODE" >> $GITHUB_OUTPUT
     
           # Set has_changes based on exit code
-          if [ $PLAN_EXIT_CODE -eq 2 ]; then
+          if [ "$PLAN_EXIT_CODE" -eq 2 ]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
           else
             echo "has_changes=false" >> $GITHUB_OUTPUT
